@@ -1,12 +1,13 @@
+/* eslint-disable import/extensions */
 import React, { Fragment } from 'react'
 
 import { Page } from '../../../payload/payload-types.js'
-import { ArchiveBlock } from '../../_blocks/ArchiveBlock'
-import { CallToActionBlock } from '../../_blocks/CallToAction'
-import { ContentBlock } from '../../_blocks/Content'
-import { MediaBlock } from '../../_blocks/MediaBlock'
-import { RelatedProducts, type RelatedProductsProps } from '../../_blocks/RelatedProducts'
-import { toKebabCase } from '../../_utilities/toKebabCase'
+import { ArchiveBlock } from '../../_blocks/ArchiveBlock/index.tsx'
+import { CallToActionBlock } from '../../_blocks/CallToAction/index.tsx'
+import { ContentBlock } from '../../_blocks/Content/index.tsx'
+import { MediaBlock } from '../../_blocks/MediaBlock/index.tsx'
+import { RelatedProducts, type RelatedProductsProps } from '../../_blocks/RelatedProducts/index.tsx'
+import { toKebabCase } from '../../_utilities/toKebabCase.ts'
 import { BackgroundColor } from '../BackgroundColor/index'
 import { VerticalPadding, VerticalPaddingOptions } from '../VerticalPadding/index'
 
@@ -21,8 +22,9 @@ const blockComponents = {
 export const Blocks: React.FC<{
   blocks: (Page['layout'][0] | RelatedProductsProps)[]
   disableTopPadding?: boolean
+  disableBottomPadding?: boolean
 }> = props => {
-  const { disableTopPadding, blocks } = props
+  const { disableTopPadding, disableBottomPadding, blocks } = props
 
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0
 
@@ -58,6 +60,10 @@ export const Blocks: React.FC<{
 
             if (disableTopPadding && index === 0) {
               paddingTop = 'none'
+            }
+
+            if (disableBottomPadding && index === 0) {
+              paddingBottom = 'none'
             }
 
             if (Block) {
