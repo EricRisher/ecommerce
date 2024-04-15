@@ -1,14 +1,15 @@
-const fetch = require('node-fetch') // Make sure to install node-fetch if it isn't already.
+// Change the filename to redirects.mjs if opting for the file extension method
+import fetch from 'node-fetch'
 
-module.exports = async () => {
+export default async () => {
   const domain = 'https://ecommerce-git-main-ericrishers-projects.vercel.app'
   const internetExplorerRedirect = {
-    source: '/:path((?!ie-incompatible.html$).*)', // Exclude the IE incompatibility page from this redirect
+    source: '/:path((?!ie-incompatible.html$).*)',
     has: [
       {
         type: 'header',
         key: 'user-agent',
-        value: '(.*Trident.*)', // Targets all IE browsers
+        value: '(.*Trident.*)',
       },
     ],
     permanent: false,
@@ -16,12 +17,10 @@ module.exports = async () => {
   }
 
   try {
-    // Ensure the API URL is correct and reachable
     const apiUrl = `${domain}/api/redirects?limit=1000&depth=1`
     const redirectsRes = await fetch(apiUrl)
     const redirectsData = await redirectsRes.json()
 
-    // Check if API call returns the expected data structure
     if (!redirectsData.docs) {
       throw new Error('API data is not in the expected format.')
     }
@@ -31,7 +30,7 @@ module.exports = async () => {
         const { from, to: { type, url, reference } = {} } = doc
         let source = from.replace(domain, '').split('?')[0].toLowerCase()
         if (source.endsWith('/')) {
-          source = source.slice(0, -1) // Remove trailing slash to avoid broken redirects
+          source = source.slice(0, -1)
         }
 
         let destination = '/'
@@ -53,11 +52,11 @@ module.exports = async () => {
 
         return null
       })
-      .filter(Boolean) // Remove any null entries
+      .filter(Boolean)
 
     return [internetExplorerRedirect, ...dynamicRedirects]
   } catch (error) {
-    console.error(`Error configuring redirects: ${error}`) // Always log errors, regardless of environment
-    return [internetExplorerRedirect] // Return default redirect if the API call fails
+    console.error(`Error configuring redirects: ${error}`)
+    return [internetExplorerRedirect]
   }
 }
