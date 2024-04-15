@@ -1,4 +1,3 @@
-// Change the filename to redirects.mjs if opting for the file extension method
 import fetch from 'node-fetch'
 
 export default async () => {

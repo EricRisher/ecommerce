@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const ContentSecurityPolicy = require('./csp')
-const redirects = require('./redirects')
+const redirects = require('./redirects.mjs')
 
 const nextConfig = {
   typescript: {
