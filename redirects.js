@@ -1,16 +1,14 @@
-// Note: This will not work in dev mode and will throw an error upon startup
-// This is because the Payload APIs are not yet running when the Next.js server starts
-// This is not a problem in production as Payload is booted up before building Next.js
-// For this reason the errors can be silently ignored in dev mode
+const fetch = require('node-fetch') // Make sure to install node-fetch if it isn't already.
 
 module.exports = async () => {
+  const domain = 'https://ecommerce-git-main-ericrishers-projects.vercel.app'
   const internetExplorerRedirect = {
-    source: '/:path((?!ie-incompatible.html$).*)', // all pages except the incompatibility page
+    source: '/:path((?!ie-incompatible.html$).*)', // Exclude the IE incompatibility page from this redirect
     has: [
       {
         type: 'header',
         key: 'user-agent',
-        value: '(.*Trident.*)', // all ie browsers
+        value: '(.*Trident.*)', // Targets all IE browsers
       },
     ],
     permanent: false,
@@ -18,64 +16,48 @@ module.exports = async () => {
   }
 
   try {
-    const redirectsRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/redirects?limit=1000&depth=1`,
-    )
-
+    // Ensure the API URL is correct and reachable
+    const apiUrl = `${domain}/api/redirects?limit=1000&depth=1`
+    const redirectsRes = await fetch(apiUrl)
     const redirectsData = await redirectsRes.json()
-    const { docs } = redirectsData
 
-    let dynamicRedirects = []
+    // Check if API call returns the expected data structure
+    if (!redirectsData.docs) {
+      throw new Error('API data is not in the expected format.')
+    }
 
-    if (docs) {
-      docs.forEach(doc => {
+    const dynamicRedirects = redirectsData.docs
+      .map(doc => {
         const { from, to: { type, url, reference } = {} } = doc
-
-        let source = from
-          .replace(process.env.NEXT_PUBLIC_SERVER_URL, '')
-          .split('?')[0]
-          .toLowerCase()
-
-        if (source.endsWith('/')) source = source.slice(0, -1) // a trailing slash will break this redirect
-
-        let destination = '/'
-
-        if (type === 'custom' && url) {
-          destination = url.replace(process.env.NEXT_PUBLIC_SERVER_URL, '')
+        let source = from.replace(domain, '').split('?')[0].toLowerCase()
+        if (source.endsWith('/')) {
+          source = source.slice(0, -1) // Remove trailing slash to avoid broken redirects
         }
 
-        if (
-          type === 'reference' &&
-          typeof reference.value === 'object' &&
-          reference?.value?._status === 'published'
-        ) {
-          destination = `${process.env.NEXT_PUBLIC_SERVER_URL}/${
+        let destination = '/'
+        if (type === 'custom' && url) {
+          destination = url.replace(domain, '')
+        } else if (type === 'reference' && reference?.value?._status === 'published') {
+          destination = `${domain}/${
             reference.relationTo !== 'pages' ? `${reference.relationTo}/` : ''
           }${reference.value.slug}`
         }
 
-        const redirect = {
-          source,
-          destination,
-          permanent: true,
-        }
-
         if (source.startsWith('/') && destination && source !== destination) {
-          return dynamicRedirects.push(redirect)
+          return {
+            source,
+            destination,
+            permanent: true,
+          }
         }
 
-        return
+        return null
       })
-    }
+      .filter(Boolean) // Remove any null entries
 
-    const redirects = [internetExplorerRedirect, ...dynamicRedirects]
-
-    return redirects
+    return [internetExplorerRedirect, ...dynamicRedirects]
   } catch (error) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error(`Error configuring redirects: ${error}`) // eslint-disable-line no-console
-    }
-
-    return []
+    console.error(`Error configuring redirects: ${error}`) // Always log errors, regardless of environment
+    return [internetExplorerRedirect] // Return default redirect if the API call fails
   }
 }
